@@ -1,11 +1,10 @@
-﻿#if NETFRAMEWORK || WINDOWS
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Windows;
 
-namespace Minimal.Mvvm.Windows
+namespace Minimal.Behaviors.Wpf
 {
     /// <summary>
     /// Represents a collection of <see cref="Behavior"/> objects that can be attached to a WPF element.
@@ -201,4 +200,3 @@ namespace Minimal.Mvvm.Windows
         #endregion
     }
 }
-#endif

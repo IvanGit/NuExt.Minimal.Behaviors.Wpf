@@ -1,7 +1,6 @@
-﻿#if NETFRAMEWORK || WINDOWS
-using System.Windows;
+﻿using System.Windows;
 
-namespace Minimal.Mvvm.Windows
+namespace Minimal.Behaviors.Wpf
 {
     /// <summary>
     /// Represents an abstract base class that provides behavior functionality for WPF elements of a specific type.
@@ -26,4 +25,3 @@ namespace Minimal.Mvvm.Windows
         #endregion
     }
 }
-#endif

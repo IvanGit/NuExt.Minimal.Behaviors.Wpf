@@ -1,0 +1,53 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net10.0-windows;net9.0-windows;net8.0-windows;net462</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GeneratePackageOnBuild Condition="'$(Configuration)' == 'Release' or '$(Configuration)' == 'Sources'">true</GeneratePackageOnBuild>
+    <PackageTags>nuext;minimal;mvvm;wpf;ui;windows;behaviors</PackageTags>
+    <Description>Lean WPF interactivity. Provides EventToCommand, KeyToCommand and other behaviors with a minimal API.
+
+Commonly Used Types:
+Minimal.Behaviors.Wpf.EventToCommand
+Minimal.Behaviors.Wpf.KeyToCommand</Description>
+    <Version>0.6.0</Version>
+    <RootNamespace>Minimal.Behaviors.Wpf</RootNamespace>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591;NETSDK1233</NoWarn>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>logo128.png</PackageIcon>
+    <PackageProjectUrl>https://github.com/IvanGit/NuExt.Minimal.Behaviors.Wpf</PackageProjectUrl>
+    <Configurations>Debug;Release;Sources</Configurations>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Sources'">
+    <PackageId>$(AssemblyName).Sources</PackageId>
+    <IncludeSource>true</IncludeSource>
+    <IncludeSymbols>false</IncludeSymbols>
+    <SymbolPackageFormat></SymbolPackageFormat>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <ContentTargetFolders>contentFiles</ContentTargetFolders>
+    <!--<SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>-->
+    <!--<GenerateAssemblyInfo>false</GenerateAssemblyInfo>-->
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(IncludeSource)' == 'true'">
+    <Content Include="**\*.cs" Pack="true" PackagePath="contentFiles/cs/any/Minimal.Behaviors.Wpf" BuildAction="Compile" />
+    <Content Remove="obj\**" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <None Include="..\logo128.png" Pack="true" PackagePath="\" />
+    <None Include=".\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <Target Name="PostPack" AfterTargets="Pack" Condition="'$(Configuration)' == 'Sources'">
+    <Delete Files="$(OutputPath)\$(PackageId).$(PackageVersion).symbols.nupkg" />
+  </Target>
+
+</Project>

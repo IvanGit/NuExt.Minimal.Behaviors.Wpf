@@ -1,5 +1,4 @@
-﻿#if NETFRAMEWORK || WINDOWS
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -7,7 +6,7 @@ using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media.Animation;
 
-namespace Minimal.Mvvm.Windows
+namespace Minimal.Behaviors.Wpf
 {
     /// <summary>
     /// Represents a base class that can be used to attach behaviors to WPF elements.
@@ -219,4 +218,3 @@ namespace Minimal.Mvvm.Windows
         internal static readonly PropertyChangedEventArgs IsAttachedPropertyChanged = new(nameof(Behavior.IsAttached));
     }
 }
-#endif

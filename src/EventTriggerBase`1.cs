@@ -1,11 +1,10 @@
-﻿#if NETFRAMEWORK || WINDOWS
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Windows;
 
-namespace Minimal.Mvvm.Windows
+namespace Minimal.Behaviors.Wpf
 {
     /// <summary>
     /// Represents an abstract base class for triggers that are invoked in response to events.
@@ -190,7 +189,7 @@ namespace Minimal.Mvvm.Windows
                 return;
             }
 
-            _subscribedEventHandler = CreateEventHandler(@event.HandlerType, parameters);
+            _subscribedEventHandler = CreateEventHandler(@event.HandlerType, parameters!);
             element.AddHandler(@event, _subscribedEventHandler);
         }
 
@@ -218,7 +217,7 @@ namespace Minimal.Mvvm.Windows
                 return;
             }
 
-            _subscribedEventHandler = CreateEventHandler(eventHandlerType, parameters);
+            _subscribedEventHandler = CreateEventHandler(eventHandlerType, parameters!);
             eventInfo.AddEventHandler(obj, _subscribedEventHandler);
         }
 
@@ -282,4 +281,3 @@ namespace Minimal.Mvvm.Windows
         }
     }
 }
-#endif

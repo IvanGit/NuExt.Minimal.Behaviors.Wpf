@@ -1,10 +1,9 @@
-﻿#if NETFRAMEWORK || WINDOWS
-using System;
+﻿using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 
-namespace Minimal.Mvvm.Windows
+namespace Minimal.Behaviors.Wpf
 {
     /// <summary>
     /// Represents an event trigger that can execute a command in response to an event.
@@ -108,4 +107,3 @@ namespace Minimal.Mvvm.Windows
         #endregion
     }
 }
-#endif

@@ -1,8 +1,7 @@
-﻿#if NETFRAMEWORK || WINDOWS
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Input;
 
-namespace Minimal.Mvvm.Windows
+namespace Minimal.Behaviors.Wpf
 {
     /// <summary>
     /// Represents a trigger that executes a command in response to a specific key gesture.
@@ -64,4 +63,3 @@ namespace Minimal.Mvvm.Windows
         #endregion
     }
 }
-#endif

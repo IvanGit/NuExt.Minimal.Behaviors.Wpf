@@ -1,8 +1,7 @@
-﻿#if NETFRAMEWORK || WINDOWS
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Input;
 
-namespace Minimal.Mvvm.Windows
+namespace Minimal.Behaviors.Wpf
 {
     /// <summary>
     /// Represents an abstract base class for event triggers that execute commands in response to events.
@@ -93,4 +92,3 @@ namespace Minimal.Mvvm.Windows
         #endregion
     }
 }
-#endif
