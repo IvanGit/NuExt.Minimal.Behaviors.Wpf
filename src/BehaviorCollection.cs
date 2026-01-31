@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Windows;
 
 namespace Minimal.Behaviors.Wpf
@@ -19,7 +20,7 @@ namespace Minimal.Behaviors.Wpf
         /// </summary>
         internal BehaviorCollection()
         {
-            if (!(bool)GetValue(DesignerProperties.IsInDesignModeProperty))
+            if (!DesignerProperties.GetIsInDesignMode(this))
             {
                 ((INotifyCollectionChanged)this).CollectionChanged += OnCollectionChanged;
             }
@@ -59,23 +60,47 @@ namespace Minimal.Behaviors.Wpf
             switch (e.Action)
             {
                 case NotifyCollectionChangedAction.Reset:
-                    ClearItems();
-                    foreach (Behavior item in this)
+                    // Detach all behaviors in reverse order
+                    for (int i = _snapshot.Count - 1; i >= 0; i--)
                     {
-                        AddItem(item);
+                        var item = _snapshot[i];
+                        ItemRemoved(item);
+                    }
+                    _snapshot.Clear();
+
+                    // Reset only occurs on Clear, so collection should be empty
+                    Debug.Assert(Count == 0, "Reset should only occur on Clear, collection should be empty");
+                    for (int i = 0; i < Count; i++)
+                    {
+                        Behavior item = this[i];
+                        AddItem(item, i);
                     }
                     return;
                 case NotifyCollectionChangedAction.Move:
+                    // FreezableCollection does not generate Move notifications.
+                    Debug.Fail("Move operation is not expected from FreezableCollection.");
                     return;
             }
 
-            foreach (Behavior item in e.OldItems ?? Array.Empty<Behavior>())
+            // Handle Add, Remove, and Replace operations
+            // FreezableCollection generates single-item notifications even for batch operations
+            if (e.OldItems != null)
             {
-                RemoveItem(item);
+                Debug.Assert(e.OldItems.Count == 1);
+                // Detach behaviors in reverse order
+                for (int i = e.OldItems.Count - 1; i >= 0; i--)
+                {
+                    RemoveItem((Behavior)e.OldItems[i]!);
+                }
             }
-            foreach (Behavior item in e.NewItems ?? Array.Empty<Behavior>())
+            if (e.NewItems != null)
             {
-                AddItem(item);
+                Debug.Assert(e.NewItems.Count == 1);
+                for (int i = 0; i < e.NewItems.Count; i++)
+                {
+                    int index = e.NewStartingIndex + i;
+                    AddItem((Behavior)e.NewItems[i]!, index);
+                }
             }
         }
 
@@ -87,17 +112,22 @@ namespace Minimal.Behaviors.Wpf
         /// Attaches the behavior collection to the specified <see cref="DependencyObject"/>.
         /// </summary>
         /// <param name="obj">The object to attach to.</param>
-        public void Attach(DependencyObject? obj)
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="obj"/> is null.</exception>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the behavior is already attached to an object.
+        /// </exception>
+        public void Attach(DependencyObject obj)
         {
+            if (DesignerProperties.GetIsInDesignMode(this))
+            {
+                return;
+            }
+            _ = obj ?? throw new ArgumentNullException(nameof(obj));
             if (obj == AssociatedObject)
             {
                 return;
             }
             ThrowInvalidOperationExceptionIfAttached();
-            if ((bool)GetValue(DesignerProperties.IsInDesignModeProperty))
-            {
-                return;
-            }
             AssociatedObject = obj;
             foreach (Behavior item in this)
             {
@@ -106,50 +136,49 @@ namespace Minimal.Behaviors.Wpf
         }
 
         /// <summary>
+        /// Detaches the behavior collection from the associated <see cref="DependencyObject"/>.
+        /// </summary>
+        public void Detach()
+        {
+            // Detach in reverse order for dependency safety
+            for (int i = Count - 1; i >= 0; i--)
+            {
+                var item = this[i];
+                item.Detach();
+            }
+            AssociatedObject = null;
+        }
+
+        /// <summary>
         /// Adds a behavior to the snapshot and attaches it if the collection is already attached.
         /// </summary>
         /// <param name="item">The behavior to add.</param>
-        private void AddItem(Behavior item)
+        /// <param name="index">The zero-based index at which <paramref name="item" /> should be inserted.</param>
+        private void AddItem(Behavior item, int index)
         {
             if (_snapshot.Contains(item))
             {
                 return;
             }
             ItemAdded(item);
-            _snapshot.Insert(IndexOf(item), item);
-        }
-
-        /// <summary>
-        /// Clears all behaviors from the snapshot and detaches them.
-        /// </summary>
-        private void ClearItems()
-        {
-            foreach (Behavior item in _snapshot)
+            if (index >= 0 && index <= _snapshot.Count)
             {
-                ItemRemoved(item);
+                _snapshot.Insert(index, item);
             }
-            _snapshot.Clear();
-        }
-
-        /// <summary>
-        /// Creates a new instance of the <see cref="BehaviorCollection"/> class.
-        /// </summary>
-        /// <returns>A new instance of <see cref="BehaviorCollection"/>.</returns>
-        protected override Freezable CreateInstanceCore()
-        {
-            return new BehaviorCollection();
-        }
-
-        /// <summary>
-        /// Detaches the behavior collection from the associated <see cref="DependencyObject"/>.
-        /// </summary>
-        public void Detach()
-        {
-            foreach (Behavior item in this)
+            else
             {
-                item.Detach();
+                _snapshot.Add(item);
             }
-            AssociatedObject = null;
+        }
+
+        /// <summary>
+        /// Removes the behavior from the snapshot and detaches it.
+        /// </summary>
+        /// <param name="item">The behavior to remove.</param>
+        private void RemoveItem(Behavior item)
+        {
+            ItemRemoved(item);
+            _snapshot.Remove(item);
         }
 
         /// <summary>
@@ -177,13 +206,12 @@ namespace Minimal.Behaviors.Wpf
         }
 
         /// <summary>
-        /// Removes the behavior from the snapshot and detaches it.
+        /// Creates a new instance of the <see cref="BehaviorCollection"/> class.
         /// </summary>
-        /// <param name="item">The behavior to remove.</param>
-        private void RemoveItem(Behavior item)
+        /// <returns>A new instance of <see cref="BehaviorCollection"/>.</returns>
+        protected override Freezable CreateInstanceCore()
         {
-            ItemRemoved(item);
-            _snapshot.Remove(item);
+            return new BehaviorCollection();
         }
 
         /// <summary>

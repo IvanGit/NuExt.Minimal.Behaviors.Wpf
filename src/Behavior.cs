@@ -1,7 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media.Animation;
@@ -22,7 +21,8 @@ namespace Minimal.Behaviors.Wpf
         /// Identifies the IsEnabled dependency property.
         /// </summary>
         public static readonly DependencyProperty IsEnabledProperty = DependencyProperty.Register(
-            nameof(IsEnabled), typeof(bool), typeof(Behavior), new PropertyMetadata(true));
+            nameof(IsEnabled), typeof(bool), typeof(Behavior), 
+            new PropertyMetadata(defaultValue: true, (d, e) => ((Behavior)d).OnIsEnabledChanged()));
 
         #endregion
 
@@ -93,34 +93,27 @@ namespace Minimal.Behaviors.Wpf
         /// Attaches the behavior to the specified object.
         /// </summary>
         /// <param name="obj">The object to attach to.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="obj"/> is null.</exception>
         /// <exception cref="InvalidOperationException">
         /// Thrown when the behavior is already attached to an object, or when the type of the specified object does not match the associated type.
         /// </exception>
-        public void Attach(DependencyObject? obj)
+        public void Attach(DependencyObject obj)
         {
+            _ = obj ?? throw new ArgumentNullException(nameof(obj));
+
             if (obj == AssociatedObject)
             {
                 return;
             }
             Debug.Assert(AssociatedObject == null);
             ThrowInvalidOperationExceptionIfAttached();
-            ThrowInvalidOperationExceptionIfTypeMismatch(obj?.GetType());
+            ThrowInvalidOperationExceptionIfTypeMismatch(obj.GetType());
             AssociatedObject = obj;
-            Debug.Assert(obj != null);
             if (AssociatedObject == null)
             {
                 return;
             }
             OnAttached();
-        }
-
-        /// <summary>
-        /// Creates a new instance of the <see cref="Behavior"/> class.
-        /// </summary>
-        /// <returns>A new instance of the <see cref="Behavior"/> class.</returns>
-        protected override Freezable CreateInstanceCore()
-        {
-            return (Freezable)Activator.CreateInstance(GetType())!;
         }
 
         /// <summary>
@@ -134,7 +127,8 @@ namespace Minimal.Behaviors.Wpf
                 return;
             }
             OnDetaching();
-            BindingOperations.ClearAllBindings(this);//clear bindings to avoid System.Windows.Data Error: 2 : Cannot find governing FrameworkElement or FrameworkContentElement for target element.
+            BindingOperations.ClearAllBindings(this);// Clear bindings to avoid System.Windows.Data Error: 2 : Cannot find governing FrameworkElement or FrameworkContentElement for target element.
+            PropertyChanged = null;// Clear all event subscribers to prevent memory leaks
             AssociatedObject = null;
         }
 
@@ -155,6 +149,22 @@ namespace Minimal.Behaviors.Wpf
         }
 
         /// <summary>
+        /// Called when the <see cref="IsEnabled"/> property changes.
+        /// </summary>
+        protected virtual void OnIsEnabledChanged()
+        {
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="Behavior"/> class.
+        /// </summary>
+        /// <returns>A new instance of the <see cref="Behavior"/> class.</returns>
+        protected override Freezable CreateInstanceCore()
+        {
+            return (Freezable)Activator.CreateInstance(GetType())!;
+        }
+
+        /// <summary>
         /// Throws an InvalidOperationException if the behavior is already attached to an object.
         /// </summary>
         /// <exception cref="InvalidOperationException">Thrown when the behavior is already attached to an object.</exception>
@@ -171,9 +181,9 @@ namespace Minimal.Behaviors.Wpf
         /// </summary>
         /// <param name="type">The type of the object to check.</param>
         /// <exception cref="InvalidOperationException">Thrown when the type of the specified object does not match the associated type.</exception>
-        private void ThrowInvalidOperationExceptionIfTypeMismatch(Type? type)
+        private void ThrowInvalidOperationExceptionIfTypeMismatch(Type type)
         {
-            if (type != null && !AssociatedType.IsAssignableFrom(type))
+            if (!AssociatedType.IsAssignableFrom(type))
             {
                 throw new InvalidOperationException($"Cannot attach type {GetType().Name} to type {type.Name}. Instances of type {GetType().Name} can only be attached to objects of type {AssociatedType.Name}.");
             }
@@ -186,7 +196,14 @@ namespace Minimal.Behaviors.Wpf
         /// <summary>
         /// Occurs when a property value changes.
         /// </summary>
-        public event PropertyChangedEventHandler? PropertyChanged;
+        private event PropertyChangedEventHandler? PropertyChanged;
+
+        /// <inheritdoc/>
+        event PropertyChangedEventHandler? INotifyPropertyChanged.PropertyChanged
+        {
+            add => PropertyChanged += value;
+            remove => PropertyChanged -= value;
+        }
 
         /// <summary>
         /// Raises the <see cref="PropertyChanged"/> event (per <see cref="INotifyPropertyChanged" />).
@@ -197,22 +214,10 @@ namespace Minimal.Behaviors.Wpf
             PropertyChanged?.Invoke(this, e);
         }
 
-        /// <summary>
-        /// Raises the PropertyChanged event.
-        /// </summary>
-        /// <param name="propertyName">
-        /// The name of the property that changed. This optional parameter 
-        /// can be automatically provided by the CallerMemberName attribute.
-        /// </param>
-        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
         #endregion
     }
 
-    internal static partial class EventArgsCache
+    internal static class EventArgsCache
     {
         internal static readonly PropertyChangedEventArgs AssociatedObjectPropertyChanged = new(nameof(Behavior.AssociatedObject));
         internal static readonly PropertyChangedEventArgs IsAttachedPropertyChanged = new(nameof(Behavior.IsAttached));

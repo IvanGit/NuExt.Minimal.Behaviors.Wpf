@@ -4,32 +4,44 @@ using System.Windows.Input;
 namespace Minimal.Behaviors.Wpf
 {
     /// <summary>
-    /// Represents a trigger that executes a command in response to a specific key gesture.
-    /// Inherits from EventCommandBase and is associated with UIElement's KeyUp event by default.
+    /// Executes a command in response to a specific key gesture.
+    /// Extends <see cref="EventToCommandBehavior{T}"/> with key gesture matching capabilities.
     /// </summary>
-    public class KeyTrigger : EventCommandBase<UIElement>
+    /// <remarks>
+    /// This behavior is associated with the <see cref="UIElement.KeyUp"/> event by default.
+    /// Use the <see cref="Gesture"/> property to specify the key gesture that triggers the command.
+    /// </remarks>
+    public class KeyToCommand : EventToCommandBehavior<UIElement>
     {
+        static KeyToCommand()
+        {
+            // Overrides the default event name to be "KeyUp".
+            EventNameProperty.OverrideMetadata(typeof(KeyToCommand), new PropertyMetadata(nameof(UIElement.KeyUp)));
+        }
+
         #region Dependency Properties
 
         /// <summary>
-        /// Identifies the Gesture dependency property.
-        /// Allows specifying a key gesture that triggers the command.
+        /// Identifies the <see cref="Gesture"/> dependency property.
         /// </summary>
         public static readonly DependencyProperty GestureProperty = DependencyProperty.Register(
-            nameof(Gesture), typeof(KeyGesture), typeof(KeyTrigger));
+            nameof(Gesture), typeof(KeyGesture), typeof(KeyToCommand));
 
         #endregion
-        static KeyTrigger()
-        {
-            // Overrides the default event name to be "KeyUp".
-            EventNameProperty.OverrideMetadata(typeof(KeyTrigger), new PropertyMetadata(nameof(UIElement.KeyUp)));
-        }
 
         #region Properties
 
         /// <summary>
         /// Gets or sets the key gesture that triggers the command.
         /// </summary>
+        /// <value>
+        /// A <see cref="KeyGesture"/> that must be matched to execute the command; 
+        /// otherwise, <see langword="null"/>.
+        /// </value>
+        /// <remarks>
+        /// If <see cref="Gesture"/> is <see langword="null"/>, the command will not execute
+        /// regardless of the keyboard input.
+        /// </remarks>
         public KeyGesture? Gesture
         {
             get => (KeyGesture?)GetValue(GestureProperty);
@@ -46,7 +58,9 @@ namespace Minimal.Behaviors.Wpf
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="eventArgs">The event data.</param>
-        /// <returns>True if the command can be executed; otherwise, false.</returns>
+        /// <returns>
+        /// <see langword="true"/> if the command can be executed; otherwise, <see langword="false"/>.
+        /// </returns>
         protected override bool CanExecuteCommand(object? sender, object? eventArgs)
         {
             if (!base.CanExecuteCommand(sender, eventArgs))

@@ -7,15 +7,15 @@ using System.Windows;
 namespace Minimal.Behaviors.Wpf
 {
     /// <summary>
-    /// Represents an abstract base class for triggers that are invoked in response to events.
+    /// Represents an abstract base class for behaviors that are invoked in response to events.
     /// </summary>
-    /// <typeparam name="T">The type of object to which the trigger is attached.</typeparam>
-    public abstract class EventTriggerBase<T> : Behavior<T> where T : DependencyObject
+    /// <typeparam name="T">The type of object to which the behavior is attached.</typeparam>
+    public abstract class EventBehavior<T> : Behavior<T> where T : DependencyObject
     {
         private readonly Action<object?, object?> _onEvent;
         private Delegate? _subscribedEventHandler;
 
-        protected EventTriggerBase()
+        protected EventBehavior()
         {
             _onEvent = OnEvent;
         }
@@ -26,23 +26,23 @@ namespace Minimal.Behaviors.Wpf
         /// Identifies the Event dependency property.
         /// </summary>
         public static readonly DependencyProperty EventProperty = DependencyProperty.Register(
-            nameof(Event), typeof(RoutedEvent), typeof(EventTriggerBase<T>),
-            new PropertyMetadata(null, (d, e) => ((EventTriggerBase<T>)d).OnEventChanged((RoutedEvent?)e.OldValue, (RoutedEvent?)e.NewValue)));
+            nameof(Event), typeof(RoutedEvent), typeof(EventBehavior<T>),
+            new PropertyMetadata(null, (d, e) => ((EventBehavior<T>)d).OnEventChanged((RoutedEvent?)e.OldValue, (RoutedEvent?)e.NewValue)));
 
         /// <summary>
         /// Identifies the EventName dependency property.
         /// </summary>
         public static readonly DependencyProperty EventNameProperty = DependencyProperty.Register(
-            nameof(EventName), typeof(string), typeof(EventTriggerBase<T>), 
+            nameof(EventName), typeof(string), typeof(EventBehavior<T>), 
             new PropertyMetadata(nameof(FrameworkElement.Loaded), 
-                (d, e) => ((EventTriggerBase<T>)d).OnEventNameChanged((string?)e.OldValue, (string?)e.NewValue)));
+                (d, e) => ((EventBehavior<T>)d).OnEventNameChanged((string?)e.OldValue, (string?)e.NewValue)));
 
         #endregion
 
         #region Properties
 
         /// <summary>
-        /// Gets or sets the routed event that activates this trigger.
+        /// Gets or sets the routed event that activates this behavior.
         /// </summary>
         public RoutedEvent? Event
         {
@@ -51,7 +51,7 @@ namespace Minimal.Behaviors.Wpf
         }
 
         /// <summary>
-        /// Gets or sets the name of the event that activates this trigger.
+        /// Gets or sets the name of the event that activates this behavior.
         /// </summary>
         public string? EventName
         {
@@ -113,10 +113,10 @@ namespace Minimal.Behaviors.Wpf
         /// <returns>A delegate representing the event handler.</returns>
         private Delegate CreateEventHandler(Type eventHandlerType, ParameterInfo[] parameters)
         {
-            Type handlerType = typeof(EventTriggerHandler<,>).MakeGenericType(parameters[0].ParameterType, parameters[1].ParameterType);
+            Type handlerType = typeof(EventHandler<,>).MakeGenericType(parameters[0].ParameterType, parameters[1].ParameterType);
             var handlerWrapper = Activator.CreateInstance(handlerType, _onEvent);
             Debug.Assert(handlerWrapper != null && handlerWrapper.GetType() == handlerType);
-            return Delegate.CreateDelegate(eventHandlerType, handlerWrapper, handlerType.GetMethod(nameof(EventTriggerHandler<object, object>.Handler))!);
+            return Delegate.CreateDelegate(eventHandlerType, handlerWrapper, handlerType.GetMethod(nameof(EventHandler<,>.Handler))!);
         }
 
         /// <summary>
@@ -173,7 +173,7 @@ namespace Minimal.Behaviors.Wpf
         /// <param name="event">The routed event to register.</param>
         private void RegisterEvent(T? obj, RoutedEvent? @event)
         {
-            if (obj is not UIElement element || @event == null)
+            if (obj is not IInputElement element || @event == null)
             {
                 return;
             }
@@ -228,7 +228,7 @@ namespace Minimal.Behaviors.Wpf
         /// <param name="event">The routed event to unregister.</param>
         private void UnregisterEvent(T? obj, RoutedEvent? @event)
         {
-            if (obj is not UIElement element || @event == null || _subscribedEventHandler == null)
+            if (obj is not IInputElement element || @event == null || _subscribedEventHandler == null)
             {
                 return;
             }
@@ -262,22 +262,15 @@ namespace Minimal.Behaviors.Wpf
     }
 
     /// <summary>
-    /// A generic class used to handle events for EventTriggerBase.
+    /// A generic class used to handle events for EventBehavior.
     /// </summary>
     /// <typeparam name="TSender">The type of the first parameter of the event handler.</typeparam>
     /// <typeparam name="TEventArgs">The type of the second parameter of the event handler.</typeparam>
-    internal class EventTriggerHandler<TSender, TEventArgs>
+    internal class EventHandler<TSender, TEventArgs>(Action<object?, object?> action)
     {
-        private readonly Action<object?, object?> _action;
-
-        public EventTriggerHandler(Action<object?, object?> action)
-        {
-            _action = action;
-        }
-
         public void Handler(TSender sender, TEventArgs e)
         {
-            _action(sender, e);
+            action(sender, e);
         }
     }
 }

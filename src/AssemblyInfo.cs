@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Windows.Markup;
 
-[assembly: XmlnsPrefix("http://schemas.nuext.minimal", "minimal")]
-[assembly: XmlnsDefinition("http://schemas.nuext.minimal", "NuExt.Minimal.Behaviors.Wpf")]
+[assembly: XmlnsPrefix("http://schemas.nuext.minimal/xaml", "minimal")]
+[assembly: XmlnsDefinition("http://schemas.nuext.minimal/xaml", "Minimal.Behaviors.Wpf")]
 
 #if NETFRAMEWORK
 /// <summary>Specifies that when a method returns <see cref="ReturnValue"/>, the parameter will not be null even if the corresponding type allows it.</summary>

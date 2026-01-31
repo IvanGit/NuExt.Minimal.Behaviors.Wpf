@@ -20,7 +20,7 @@ namespace Minimal.Behaviors.Wpf
         /// <summary>
         /// Gets the object to which this behavior is attached, cast to the specified type <typeparamref name="T"/>.
         /// </summary>
-        protected new T? AssociatedObject => (T?)base.AssociatedObject;
+        public new T? AssociatedObject => (T?)base.AssociatedObject;
 
         #endregion
     }

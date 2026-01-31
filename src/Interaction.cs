@@ -18,14 +18,14 @@ namespace Minimal.Behaviors.Wpf
         /// </summary>
         private static readonly DependencyProperty BehaviorsProperty = DependencyProperty.RegisterAttached(
             "InteractionBehaviors", typeof(BehaviorCollection), typeof(Interaction), 
-            new FrameworkPropertyMetadata(null, OnBehaviorsChanged));
+            new FrameworkPropertyMetadata(defaultValue: null, OnBehaviorsChanged));
 
         /// <summary>
         /// Identifies the BehaviorsTemplate attached dependency property.
         /// </summary>
         public static readonly DependencyProperty BehaviorsTemplateProperty = DependencyProperty.RegisterAttached(
             "BehaviorsTemplate", typeof(DataTemplate), typeof(Interaction), 
-            new FrameworkPropertyMetadata(null, OnBehaviorsTemplateChanged));
+            new FrameworkPropertyMetadata(defaultValue: null, OnBehaviorsTemplateChanged));
 
         /// <summary>
         /// Identifies the BehaviorsTemplateSnapshot attached dependency property.
@@ -44,7 +44,6 @@ namespace Minimal.Behaviors.Wpf
         /// <param name="e">Event data that contains information about which property changed and its old and new values.</param>
         private static void OnBehaviorsChanged(DependencyObject obj, DependencyPropertyChangedEventArgs e)
         {
-            Debug.Assert(obj != null);
             var oldBehaviors = (BehaviorCollection?)e.OldValue;
             var newBehaviors = (BehaviorCollection?)e.NewValue;
 
