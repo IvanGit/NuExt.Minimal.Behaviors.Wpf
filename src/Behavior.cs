@@ -21,8 +21,24 @@ namespace Minimal.Behaviors.Wpf
         /// Identifies the IsEnabled dependency property.
         /// </summary>
         public static readonly DependencyProperty IsEnabledProperty = DependencyProperty.Register(
-            nameof(IsEnabled), typeof(bool), typeof(Behavior), 
-            new PropertyMetadata(defaultValue: true, (d, e) => ((Behavior)d).OnIsEnabledChanged()));
+            nameof(IsEnabled), typeof(bool), typeof(Behavior), new PropertyMetadata(defaultValue: true,
+                static (d, e) =>
+                {
+                    var b = (Behavior)d;
+                    var oldValue = (bool)e.OldValue;
+                    var newValue = (bool)e.NewValue;
+                    if (oldValue == newValue) return;
+                    b.OnPropertyChanged(EventArgsCache.IsEnabledPropertyChanged);
+                    b.OnIsEnabledChanged(oldValue, newValue);
+                },
+
+                static (d, baseValue) =>
+                {
+                    var b = (Behavior)d;
+                    if (!b.IsAttached && (bool)baseValue) return false;
+                    return baseValue;
+                }
+                ));
 
         #endregion
 
@@ -41,7 +57,7 @@ namespace Minimal.Behaviors.Wpf
         /// <summary>
         /// Gets the object to which this behavior is attached.
         /// </summary>
-        public DependencyObject? AssociatedObject
+        protected internal DependencyObject? AssociatedObject
         {
             get
             {
@@ -54,6 +70,7 @@ namespace Minimal.Behaviors.Wpf
                 WritePreamble();
                 _associatedObject = value;
                 WritePostscript();
+                CoerceValue(IsEnabledProperty);
                 OnPropertyChanged(EventArgsCache.AssociatedObjectPropertyChanged);
                 OnPropertyChanged(EventArgsCache.IsAttachedPropertyChanged);
             }
@@ -109,11 +126,18 @@ namespace Minimal.Behaviors.Wpf
             ThrowInvalidOperationExceptionIfAttached();
             ThrowInvalidOperationExceptionIfTypeMismatch(obj.GetType());
             AssociatedObject = obj;
-            if (AssociatedObject == null)
+            Debug.Assert(AssociatedObject != null, "AssociatedObject should never be null after successful assignment.");
+            try
             {
-                return;
+                OnAttached();
             }
-            OnAttached();
+            catch (Exception ex)
+            {
+                Debug.Fail(ex.Message);
+                ResetState();
+                throw;
+
+            }
         }
 
         /// <summary>
@@ -122,14 +146,19 @@ namespace Minimal.Behaviors.Wpf
         public void Detach()
         {
             Debug.Assert(AssociatedObject != null);
+
             if (AssociatedObject == null)
             {
                 return;
             }
-            OnDetaching();
-            BindingOperations.ClearAllBindings(this);// Clear bindings to avoid System.Windows.Data Error: 2 : Cannot find governing FrameworkElement or FrameworkContentElement for target element.
-            PropertyChanged = null;// Clear all event subscribers to prevent memory leaks
-            AssociatedObject = null;
+            try
+            {
+                OnDetaching();
+            }
+            finally
+            {
+                ResetState();
+            }
         }
 
         /// <summary>
@@ -151,7 +180,7 @@ namespace Minimal.Behaviors.Wpf
         /// <summary>
         /// Called when the <see cref="IsEnabled"/> property changes.
         /// </summary>
-        protected virtual void OnIsEnabledChanged()
+        protected virtual void OnIsEnabledChanged(bool oldValue, bool newValue)
         {
         }
 
@@ -161,7 +190,17 @@ namespace Minimal.Behaviors.Wpf
         /// <returns>A new instance of the <see cref="Behavior"/> class.</returns>
         protected override Freezable CreateInstanceCore()
         {
-            return (Freezable)Activator.CreateInstance(GetType())!;
+            var type = GetType();
+            var ctor = type.GetConstructor([]) ?? throw new InvalidOperationException($"{type.Name} must have a public parameterless constructor.");
+            return (Freezable)ctor.Invoke(null)!;
+        }
+
+        private void ResetState()
+        {
+            // Clear bindings to avoid System.Windows.Data Error: 2 : Cannot find governing FrameworkElement or FrameworkContentElement for target element.
+            try { BindingOperations.ClearAllBindings(this); } catch { /* best effort */ }
+            PropertyChanged = null;// Clear all event subscribers to prevent memory leaks
+            AssociatedObject = null;
         }
 
         /// <summary>
@@ -221,5 +260,6 @@ namespace Minimal.Behaviors.Wpf
     {
         internal static readonly PropertyChangedEventArgs AssociatedObjectPropertyChanged = new(nameof(Behavior.AssociatedObject));
         internal static readonly PropertyChangedEventArgs IsAttachedPropertyChanged = new(nameof(Behavior.IsAttached));
+        internal static readonly PropertyChangedEventArgs IsEnabledPropertyChanged = new(nameof(Behavior.IsEnabled));
     }
 }

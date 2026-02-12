@@ -70,6 +70,10 @@ namespace Minimal.Behaviors.Wpf
         /// <param name="newEvent">The new routed event.</param>
         protected virtual void OnEventChanged(RoutedEvent? oldEvent, RoutedEvent? newEvent)
         {
+            if (ReferenceEquals(oldEvent, newEvent))
+            {
+                return;
+            }
             if (newEvent != null)
             {
                 EventName = null;
@@ -89,6 +93,10 @@ namespace Minimal.Behaviors.Wpf
         /// <param name="newEventName">The new event name.</param>
         protected virtual void OnEventNameChanged(string? oldEventName, string? newEventName)
         {
+            if (string.Equals(oldEventName, newEventName, StringComparison.Ordinal))
+            {
+                return;
+            }
             if (newEventName != null)
             {
                 Event = null;
@@ -126,7 +134,7 @@ namespace Minimal.Behaviors.Wpf
         /// </summary>
         /// <param name="eventHandlerType">The type of the event handler.</param>
         /// <param name="parameters">When this method returns, contains the parameters of the 'Invoke' method if the type is valid.</param>
-        /// <returns>true if the type is a valid event handler; otherwise, false.</returns>
+        /// <returns><see langword="true"/> if the type is a valid event handler; otherwise, <see langword="false"/>.</returns>
         private static bool IsValidEvent(Type eventHandlerType, [NotNullWhen(true)] out ParameterInfo[]? parameters)
         {
             MethodInfo? methodInfo;
@@ -147,8 +155,14 @@ namespace Minimal.Behaviors.Wpf
             base.OnAttached();
             UnregisterEvent(AssociatedObject, Event);
             UnregisterEvent(AssociatedObject, EventName);
-            RegisterEvent(AssociatedObject, Event);
-            RegisterEvent(AssociatedObject, EventName);
+            if (Event is not null)
+            {
+                RegisterEvent(AssociatedObject, Event);
+            }
+            else
+            {
+                RegisterEvent(AssociatedObject, EventName);
+            }
         }
 
         /// <inheritdoc />
@@ -160,11 +174,30 @@ namespace Minimal.Behaviors.Wpf
         }
 
         /// <summary>
-        /// Called when the associated event is raised.
+        /// Entry point invoked by the event bridge. Performs common gating and dispatches to <see cref="OnEventCore(object, object)"/>.
         /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="eventArgs">The event data.</param>
-        protected abstract void OnEvent(object? sender, object? eventArgs);
+        /// <param name="sender">The event source.</param>
+        /// <param name="eventArgs">The event arguments.</param>
+        /// <remarks>
+        /// The default implementation ignores the event when <see cref="Behavior.IsEnabled"/> is <see langword="false"/>.
+        /// Override <see cref="OnEventCore(object, object)"/> to implement behavior logic.
+        /// </remarks>
+        protected virtual void OnEvent(object? sender, object? eventArgs)
+        {
+            if (!IsEnabled)
+            {
+                return;
+            }
+            OnEventCore(sender, eventArgs);
+        }
+
+        /// <summary>
+        /// Implements the behavior's event handling logic.
+        /// Called only when <see cref="OnEvent(object, object)"/> allows delivery (e.g., when enabled).
+        /// </summary>
+        /// <param name="sender">The event source.</param>
+        /// <param name="eventArgs">The event arguments.</param>
+        protected abstract void OnEventCore(object? sender, object? eventArgs);
 
         /// <summary>
         /// Registers the routed event on the specified object.
@@ -173,14 +206,15 @@ namespace Minimal.Behaviors.Wpf
         /// <param name="event">The routed event to register.</param>
         private void RegisterEvent(T? obj, RoutedEvent? @event)
         {
-            if (obj is not IInputElement element || @event == null)
+            if (obj is null || @event is null)
             {
                 return;
             }
+
             Debug.Assert(_subscribedEventHandler == null);
             if (_subscribedEventHandler != null)
             {
-                throw new InvalidOperationException($"Subscribed Event Handler is already registered on {@event}");
+                throw new InvalidOperationException($"An event handler is already registered for '{@event}'.");
             }
 
             var eventHandlerType = @event.HandlerType;
@@ -190,7 +224,24 @@ namespace Minimal.Behaviors.Wpf
             }
 
             _subscribedEventHandler = CreateEventHandler(@event.HandlerType, parameters!);
-            element.AddHandler(@event, _subscribedEventHandler);
+
+            // Use handledEventsToo = true to allow behaviors to observe handled routed events
+            // (e.g., tunneling/preview stages). This mirrors common interaction frameworks.
+            switch (obj)
+            {
+                case UIElement uiElement:
+                    uiElement.AddHandler(@event, _subscribedEventHandler, handledEventsToo: true);
+                    break;
+                case ContentElement contentElement:
+                    contentElement.AddHandler(@event, _subscribedEventHandler, handledEventsToo: true);
+                    break;
+                case UIElement3D uiElement3D:
+                    uiElement3D.AddHandler(@event, _subscribedEventHandler, handledEventsToo: true);
+                    break;
+                default:
+                    // No AddHandler available for other IInputElement implementations.
+                    break;
+            }
         }
 
         /// <summary>
@@ -200,14 +251,15 @@ namespace Minimal.Behaviors.Wpf
         /// <param name="eventName">The name of the event.</param>
         private void RegisterEvent(T? obj, string? eventName)
         {
-            if (obj == null || string.IsNullOrEmpty(eventName))
+            if (obj is null || string.IsNullOrEmpty(eventName))
             {
                 return;
             }
+
             Debug.Assert(_subscribedEventHandler == null);
             if (_subscribedEventHandler != null)
             {
-                throw new InvalidOperationException($"Subscribed Event Handler is already registered on {eventName}");
+                throw new InvalidOperationException($"An event handler is already registered for '{eventName}'.");
             }
 
             var eventInfo = obj.GetType().GetEvent(eventName);
@@ -228,12 +280,26 @@ namespace Minimal.Behaviors.Wpf
         /// <param name="event">The routed event to unregister.</param>
         private void UnregisterEvent(T? obj, RoutedEvent? @event)
         {
-            if (obj is not IInputElement element || @event == null || _subscribedEventHandler == null)
+            if (obj is null || @event is null || _subscribedEventHandler is null)
             {
                 return;
             }
 
-            element.RemoveHandler(@event, _subscribedEventHandler);
+            switch (obj)
+            {
+                case UIElement uiElement:
+                    uiElement.RemoveHandler(@event, _subscribedEventHandler);
+                    break;
+                case ContentElement contentElement:
+                    contentElement.RemoveHandler(@event, _subscribedEventHandler);
+                    break;
+                case UIElement3D uiElement3D:
+                    uiElement3D.RemoveHandler(@event, _subscribedEventHandler);
+                    break;
+                default:
+                    // No RemoveHandler available for other IInputElement implementations.
+                    break;
+            }
             _subscribedEventHandler = null;
         }
 
@@ -244,7 +310,7 @@ namespace Minimal.Behaviors.Wpf
         /// <param name="eventName">The name of the event.</param>
         private void UnregisterEvent(T? obj, string? eventName)
         {
-            if (obj == null || string.IsNullOrEmpty(eventName) || _subscribedEventHandler == null)
+            if (obj is null || string.IsNullOrEmpty(eventName) || _subscribedEventHandler is null)
             {
                 return;
             }

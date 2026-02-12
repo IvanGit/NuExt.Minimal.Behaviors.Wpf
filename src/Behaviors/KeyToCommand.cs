@@ -11,7 +11,7 @@ namespace Minimal.Behaviors.Wpf
     /// This behavior is associated with the <see cref="UIElement.KeyUp"/> event by default.
     /// Use the <see cref="Gesture"/> property to specify the key gesture that triggers the command.
     /// </remarks>
-    public class KeyToCommand : EventToCommandBehavior<UIElement>
+    public sealed class KeyToCommand : EventToCommandBehavior<UIElement>
     {
         static KeyToCommand()
         {
@@ -52,22 +52,17 @@ namespace Minimal.Behaviors.Wpf
 
         #region Methods
 
-        /// <summary>
-        /// Determines whether the command can be executed based on the provided event arguments.
+        /// <inheritdoc/>
+        /// <remarks>
         /// Checks if the specified key gesture matches the input event arguments.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="eventArgs">The event data.</param>
-        /// <returns>
-        /// <see langword="true"/> if the command can be executed; otherwise, <see langword="false"/>.
-        /// </returns>
-        protected override bool CanExecuteCommand(object? sender, object? eventArgs)
+        /// </remarks>
+        protected override bool CanExecuteCore(object? sender, object? eventArgs)
         {
-            if (!base.CanExecuteCommand(sender, eventArgs))
+            if (Gesture is null || eventArgs is not InputEventArgs inputEventArgs)
             {
                 return false;
             }
-            if (Gesture == null || eventArgs is not InputEventArgs inputEventArgs)
+            if (!base.CanExecuteCore(sender, eventArgs))
             {
                 return false;
             }

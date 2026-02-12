@@ -3,9 +3,9 @@
 namespace Minimal.Behaviors.Wpf
 {
     /// <summary>
-    /// Represents an abstract base class that provides behavior functionality for WPF elements of a specific type.
+    /// Represents a type-safe behavior that can attach to objects of type <typeparamref name="T"/>.
     /// </summary>
-    /// <typeparam name="T">The type of the associated object, which must be a DependencyObject.</typeparam>
+    /// <typeparam name="T">The associated object type.</typeparam>
     public abstract class Behavior<T> : Behavior where T : DependencyObject
     {
         /// <summary>
@@ -18,7 +18,8 @@ namespace Minimal.Behaviors.Wpf
         #region Properties
 
         /// <summary>
-        /// Gets the object to which this behavior is attached, cast to the specified type <typeparamref name="T"/>.
+        /// Gets the associated object typed as <typeparamref name="T"/>.
+        /// Returns <see langword="null"/> if the behavior is not attached.
         /// </summary>
         public new T? AssociatedObject => (T?)base.AssociatedObject;
 

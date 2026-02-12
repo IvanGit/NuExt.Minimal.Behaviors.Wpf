@@ -67,8 +67,10 @@ namespace Minimal.Behaviors.Wpf
                         ItemRemoved(item);
                     }
                     _snapshot.Clear();
-
-                    // Reset only occurs on Clear, so collection should be empty
+                    // IMPORTANT:
+                    // Even though FreezableCollection uses Reset exclusively for Clear(),
+                    // this code intentionally handles Reset as a general "rebuild state"
+                    // event. This is by design, forward‑compatible, and MUST remain as-is.
                     Debug.Assert(Count == 0, "Reset should only occur on Clear, collection should be empty");
                     for (int i = 0; i < Count; i++)
                     {

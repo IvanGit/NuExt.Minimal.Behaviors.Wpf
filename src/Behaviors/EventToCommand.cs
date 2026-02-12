@@ -5,7 +5,7 @@ namespace Minimal.Behaviors.Wpf
     /// <summary>
     /// Converts events to command executions with support for event argument transformation.
     /// </summary>
-    public class EventToCommand : EventToCommandBehavior<DependencyObject>
+    public sealed class EventToCommand : EventToCommandBehavior<DependencyObject>
     {
     }
 }
