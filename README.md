@@ -1,9 +1,11 @@
 ﻿# NuExt.Minimal.Behaviors.Wpf
 
-**A minimalistic, production-ready implementation of the Attached Behaviors pattern for WPF.**  
-Pragmatic MVVM interactivity with a minimal, high-performance design: deterministic and predictable.
+`NuExt.Minimal.Behaviors.Wpf` is a **minimalistic, production‑ready** implementation of WPF **Attached Behaviors** for MVVM. It delivers deterministic, predictable interactivity with ready‑to‑use behaviors (`EventToCommand`, `KeyToCommand`) and template‑driven composition — **dynamic behavior injection via `BehaviorsTemplate`** and **runtime selection via `BehaviorsTemplateSelector`**.
 
-This library delivers the essential building blocks for clean UI interactivity in WPF applications following the MVVM pattern. It streamlines the classic approach with ready-to-use behaviors like `EventToCommand` and `KeyToCommand`, together with `BehaviorsTemplate` and `BehaviorsTemplateSelector` for dynamic behavior injection.
+[![NuGet](https://img.shields.io/nuget/v/NuExt.Minimal.Behaviors.Wpf.svg)](https://www.nuget.org/packages/NuExt.Minimal.Behaviors.Wpf)
+[![Build](https://github.com/IvanGit/NuExt.Minimal.Behaviors.Wpf/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/IvanGit/NuExt.Minimal.Behaviors.Wpf/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/IvanGit/NuExt.Minimal.Behaviors.Wpf?label=license)](https://github.com/IvanGit/NuExt.Minimal.Behaviors.Wpf/blob/main/LICENSE)
+[![Downloads](https://img.shields.io/nuget/dt/NuExt.Minimal.Behaviors.Wpf.svg)](https://www.nuget.org/packages/NuExt.Minimal.Behaviors.Wpf)
 
 **Package ecosystem:** The core package ships the foundational attached behavior infrastructure and essential behaviors for MVVM. For extra behaviors/services, see [`NuExt.Minimal.Mvvm.Wpf`](https://www.nuget.org/packages/NuExt.Minimal.Mvvm.Wpf).
 
@@ -63,8 +65,8 @@ This library delivers the essential building blocks for clean UI interactivity i
 
 ### Dynamic Behaviors with BehaviorsTemplate
 Define once, apply many times. The template supports **two** concise formats:
-- **Single behavior** via ContentControl.Content
-- **Multiple behaviors** via ItemsControl.Items
+- **Single behavior** via `ContentControl.Content`
+- **Multiple behaviors** via `ItemsControl.Items`
 
 #### Single:
 ```xml
